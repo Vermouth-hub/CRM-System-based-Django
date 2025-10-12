@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投诉管理</title>
+    <!-- 引入外部库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- Tailwind自定义配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#F5222D',
+                        info: '#1890FF',
+                        light: '#F5F7FA',
+                        dark: '#1D2129'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .sidebar-item { @apply flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200; }
+            .sidebar-item.active { @apply bg-primary/10 text-primary font-medium; }
+            .btn { @apply px-4 py-2 rounded-lg font-medium transition-all duration-200; }
+            .btn-primary { @apply bg-primary text-white hover:bg-primary/90; }
+            .btn-secondary { @apply bg-white border border-gray-300 text-gray-700 hover:bg-gray-50; }
+            .card { @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden; }
+            .form-input { @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all; }
+            .form-label { @apply block text-sm font-medium text-gray-700 mb-1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 侧边栏（共用） -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 h-full transition-all duration-300 transform z-30">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                        <i class="fa fa-users text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800">客户信息管理系统</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <nav class="space-y-1">
+                    <a href="{% url 'dashboard' %}" class="sidebar-item" data-target="dashboard">
+                        <i class="fa fa-dashboard w-5 text-center"></i>
+                        <span>控制面板</span>
+                    </a>
+                    <a href="{% url 'customer' %}" class="sidebar-item" data-target="customer">
+                        <i class="fa fa-id-card w-5 text-center"></i>
+                        <span>客户资料管理</span>
+                    </a>
+                    <a href="{% url 'support' %}" class="sidebar-item" data-target="support">
+                        <i class="fa fa-life-ring w-5 text-center"></i>
+                        <span>客户支持管理</span>
+                    </a>
+                    <a href="{% url 'service' %}" class="sidebar-item" data-target="after-sales">
+                        <i class="fa fa-calendar-check-o w-5 text-center"></i>
+                        <span>售后服务管理</span>
+                    </a>
+                    <a href="{% url 'complaint' %}" class="sidebar-item active" data-target="complaint">
+                        <i class="fa fa-exclamation-triangle w-5 text-center"></i>
+                        <span>投诉管理</span>
+                    </a>
+                    <a href="{% url 'feedback' %}" class="sidebar-item" data-target="feedback">
+                        <i class="fa fa-commenting-o w-5 text-center"></i>
+                        <span>新品市场反馈</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
+                <div class="flex items-center gap-3">
+                    <img src="https://picsum.photos/id/1005/40/40" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <p class="font-medium text-sm">{{username}}</p>
+                        <p class="text-xs text-gray-500">{{role}}</p>
+                    </div>
+                    <a href="{% url 'logout' %}" class="ml-auto text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-sign-out"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- 主内容区 -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- 顶部导航（共用） -->
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-20">
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle" class="lg:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                </div>
+            </header>
+            
+            <!-- 投诉管理核心内容 -->
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div id="complaint" class="page-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">投诉管理</h2>
+                        <div class="flex gap-3">
+                            <button class="btn btn-primary" id="record-complaint-btn">
+                                <i class="fa fa-plus mr-2"></i>记录投诉
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 投诉统计卡片 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="card p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm mb-1">本月投诉总数</p>
+                                    <h3 class="text-3xl font-bold">{{complaints_this_month}}</h3>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center text-danger">
+                                    <i class="fa fa-exclamation-circle text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm mb-1">未处理投诉</p>
+                                    <h3 class="text-3xl font-bold">{{waiting_handle_complaints}}</h3>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center text-warning">
+                                    <i class="fa fa-clock-o text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm mb-1">已解决投诉</p>
+                                    <h3 class="text-3xl font-bold">{{handled_complaints}}</h3>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center text-success">
+                                    <i class="fa fa-check-circle text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 投诉列表 -->
+                    <div class="card mb-6">
+                        <div class="p-6 border-b border-gray-100">
+                            <h3 class="font-bold text-lg">投诉处理列表</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">投诉编号</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">客户名称</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">投诉产品</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">投诉时间</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">处理人</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for c in complaints %}
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{c.complaint_id}}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{c.company.company_name}}</div>
+                                            <div class="text-sm text-gray-500">{{c.company.legal_representative}} · {{c.company.contact_phone}}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{c.product.product_name}}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{c.complaint_time|date:"Y年m月d日 H:i"}}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <img class="h-6 w-6 rounded-full mr-2" src="https://picsum.photos/id/1066/30/30" alt="处理人头像">
+                                                <span class="text-sm text-gray-900">{{c.salesman.salesman_name}}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {% if c.complaint_status == 0 %}
+                                                    bg-green-100 text-green-800
+                                                {% elif c.complaint_status == 1 %}
+                                                    bg-red-100 text-red-800
+                                                {% else %}
+                                                    bg-yellow-100 text-yellow-800
+                                                {% endif %}">
+                                                {{c.get_complaint_status_display}}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button class="text-success hover:text-success/80"
+                                                    data-id="{{ c.complaint_id }}"
+                                                    onclick="handleComplaint(this)">处理</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                            <div class="text-sm text-gray-500">显示 {{complaints.start_index}} 到 {{complaints.end_index}} 条，共 {{ paginator.count }} 条记录</div>
+                            <div class="flex gap-2">
+                                {% if complaints.has_previous %}
+                                    <a href="?page={{ complaints.previous_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-50" disabled>
+                                        <i class="fa fa-chevron-left"></i>
+                                    </button>
+                                {% endif %}
+                                {% for num in paginator.page_range %}
+                                    {% if num == current_page %}
+                                        <button class="px-3 py-1 border border-primary bg-primary text-white rounded-md">{{ num }}</button>
+                                    {% else %}
+                                        <a href="?page={{ num }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">{{ num }}</a>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if complaints.has_next %}
+                                    <a href="?page={{ complaints.next_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-50" disabled>
+                                        <i class="fa fa-chevron-right"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+    
+    <!-- 记录投诉模态框 -->
+    <div id="record-complaint-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold text-gray-800">记录客户投诉</h3>
+                <button id="close-complaint-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="record-complaint-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="form-label">搜素编号<span class="text-danger">*</span></label>
+                            <input type="text" class="form-input" name="complaint_id" required>
+                        </div>
+                        <div>
+                            <label class="form-label">客户名称 <span class="text-danger">*</span></label>
+                            <select class="form-input" name="company" required>
+                                <option value="">请选择客户</option>
+                                {% for c in companies %}
+                                    <option value="{{ c.company_id }}">{{ c.company_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">投诉产品 <span class="text-danger">*</span></label>
+                            <select class="form-input" name="product" required>
+                            <option value="">请选择产品</option>
+                            {% for p in products %}
+                                <option value="{{ p.product_id }}">{{ p.product_name }}</option>
+                            {% endfor %}
+                        </select>
+                        </select>
+                        </div>
+                        <div>
+                            <label class="form-label">投诉日期 <span class="text-danger">*</span></label>
+                            <input type="date" class="form-input" name="complaint_time" required>
+                        </div>
+                        <div>
+                            <label class="form-label">处理负责人</label>
+                            <select class="form-input" name="man" required>
+                            <option value="">请选择负责人</option>
+                            {% for s in salesman %}
+                                <option value="{{ s.salesman_id }}">{{ s.salesman_name }}</option>
+                            {% endfor %}
+                        </select>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label">投诉内容 <span class="text-danger">*</span></label>
+                            <textarea class="form-input h-32" placeholder="请详细记录客户的投诉内容..." name="content" required></textarea>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" id="cancel-complaint" class="btn btn-secondary">取消</button>
+                        <button type="submit" id="save-complaint" class="btn btn-primary">保存投诉记录</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- 侧边栏折叠 + 图表初始化 + 模态框JS -->
+    <script>
+        // 侧边栏折叠
+        document.getElementById('sidebar-toggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        
+        // 处理点击
+        function handleComplaint(button) {
+            const complaintId = button.getAttribute("data-id");
+            fetch(`dashboard/complaint/handle/${complaintId}/`, {
+                method: "POST",
+                headers: {
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    button.textContent = "已处理";
+                    button.disabled = true;
+                } else {
+                    alert("处理失败：" + data.message);
+                }
+            });
+        }
+        
+        // 新建投诉
+        document.addEventListener("DOMContentLoaded", () => {
+            const modal = document.getElementById('record-complaint-modal');
+            const createComplaintBtn = document.getElementById('record-complaint-btn');
+            const closeModalBtn = document.getElementById('close-complaint-modal');
+            const cancelCreateBtn = document.getElementById('cancel-complaint');
+            const createForm = document.getElementById('record-complaint-form');
+            createComplaintBtn.addEventListener('click', () => {
+                modal.classList.remove('hidden');
+                createForm.reset();
+            });
+            closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            cancelCreateBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.add('hidden');
+            });
+            createForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                try {
+                    const formData = {
+                        complaint_id: createForm.querySelector('input[name="complaint_id"]').value.trim(),
+                        company: createForm.querySelector('select[name="company"]').value,   
+                        product: createForm.querySelector('select[name="product"]').value,
+                        salesman: createForm.querySelector('select[name="man"]').value,
+                        complaint_time: createForm.querySelector('input[name="complaint_time"]').value,
+                        complaint_context: createForm.querySelector('textarea[name="content"]').value.trim(), // ✅ textarea
+                        complaint_status: 0 
+                    }
+
+                    if (!formData.complaint_id) {
+                        alert('请填写投诉编号!');
+                        return;
+                    }
+                    if (!formData.company) {
+                        alert('请选择关联客户单位!');
+                        return;
+                    }
+                    if (!formData.product) {
+                        alert('请选择关联产品!');
+                        return;
+                    }
+
+                    const response = await fetch("/dashboard/complaint/add/", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.status === 'success') {
+                        alert(result.message);
+                        modal.classList.add('hidden');
+                        window.location.reload();
+                    } else {
+                        alert(`提交失败：${result.message || '未知错误'}`);
+                    }
+                } catch (error) {
+                    alert(`请求失败：${error.message || '网络异常，请稍后重试'}`);
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
+    

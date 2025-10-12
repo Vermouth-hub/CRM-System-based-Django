@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客户资料管理</title>
+    <!-- 引入外部库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Tailwind自定义配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#F5222D',
+                        info: '#1890FF',
+                        light: '#F5F7FA',
+                        dark: '#1D2129'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .sidebar-item { @apply flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200; }
+            .sidebar-item.active { @apply bg-primary/10 text-primary font-medium; }
+            .btn { @apply px-4 py-2 rounded-lg font-medium transition-all duration-200; }
+            .btn-primary { @apply bg-primary text-white hover:bg-primary/90; }
+            .btn-secondary { @apply bg-white border border-gray-300 text-gray-700 hover:bg-gray-50; }
+            .card { @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden; }
+            .form-input { @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all; }
+            .form-label { @apply block text-sm font-medium text-gray-700 mb-1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 侧边栏（共用） -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 h-full transition-all duration-300 transform z-30">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                        <i class="fa fa-users text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800">客户信息管理系统</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <nav class="space-y-1">
+                    <a href="{% url 'dashboard' %}" class="sidebar-item" data-target="dashboard">
+                        <i class="fa fa-dashboard w-5 text-center"></i>
+                        <span>控制面板</span>
+                    </a>
+                    <a href="{% url 'customer' %}" class="sidebar-item active" data-target="customer">
+                        <i class="fa fa-id-card w-5 text-center"></i>
+                        <span>客户资料管理</span>
+                    </a>
+                    <a href="{% url 'support' %}" class="sidebar-item" data-target="support">
+                        <i class="fa fa-life-ring w-5 text-center"></i>
+                        <span>客户支持管理</span>
+                    </a>
+                    <a href="{% url 'service' %}" class="sidebar-item" data-target="after-sales">
+                        <i class="fa fa-calendar-check-o w-5 text-center"></i>
+                        <span>售后服务管理</span>
+                    </a>
+                    <a href="{% url 'complaint' %}" class="sidebar-item" data-target="complaint">
+                        <i class="fa fa-exclamation-triangle w-5 text-center"></i>
+                        <span>投诉管理</span>
+                    </a>
+                    <a href="{% url 'feedback' %}" class="sidebar-item" data-target="feedback">
+                        <i class="fa fa-commenting-o w-5 text-center"></i>
+                        <span>新品市场反馈</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
+                <div class="flex items-center gap-3">
+                    <img src="https://picsum.photos/id/1005/40/40" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <p class="font-medium text-sm">{{username}}</p>
+                        <p class="text-xs text-gray-500">{{role}}</p>
+                    </div>
+                    <a href="{% url 'logout' %}" class="ml-auto text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-sign-out"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- 主内容区 -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-20">
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle" class="lg:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-6">
+                </div>
+            </header>
+            
+            <!-- 客户资料管理核心内容 -->
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div id="customer" class="page-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">客户资料管理</h2>
+                        <button class="btn btn-primary" id="add-customer-btn">
+                            <i class="fa fa-plus mr-2"></i>新增客户
+                        </button>
+                    </div>
+                    
+                    <!-- 搜索和筛选 -->
+                    <div class="card p-6 mb-6">
+                    <h3 class="font-bold text-lg mb-4">客户查询</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="form-label">客户名称</label>
+                            <input type="text" class="form-input" name="company_name" placeholder="输入客户名称">
+                        </div>
+                        <div>
+                            <label class="form-label">客户代码</label>
+                            <input type="text" class="form-input" name="company_id" placeholder="输入客户代码">
+                        </div>
+                        <div>
+                            <label class="form-label">所在区域</label>
+                            <select class="form-input" name="region">
+                                <option value="">全部区域</option>
+                                <option value="beijing">北京</option>
+                                <option value="shanghai">上海</option>
+                                <option value="guangzhou">广州</option>
+                                <option value="shenzhen">深圳</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">购买产品</label>
+                            <select class="form-input" name="product_name">
+                                {% for product in products %}
+                                    <option value="{{ product.product_id }}">{{ product.product_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 mt-4">
+                        <button type="button" class="btn btn-primary" id="searchBtn">查询</button>
+                    </div>
+                </div>
+                    
+                    <!-- 客户列表 -->
+                    <div class="card mb-6">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">客户代码</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">客户名称</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">所在区域</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">联系人</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">联系电话</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">购买产品</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">销售员</th>
+                                        <!-- th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</!-->
+                                    </tr>
+                                </thead>
+                                <tbody id="orderTableBody" class="bg-white divide-y divide-gray-200">
+                                            {% for order in orders %}
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ order.order_id }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="text-sm font-medium text-gray-900">{{ order.company.company_name }}</div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ order.company.region }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ order.company.legal_representative }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ order.company.contact_phone }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ order.product.product_name }}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="flex items-center">
+                                                            <img class="h-6 w-6 rounded-full mr-2" src="https://picsum.photos/id/1066/30/30" alt="销售员头像">
+                                                            <span class="text-sm text-gray-900">{{ order.salesman.salesman_name }}</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                            </table>
+
+                            <div class="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                            <div class="text-sm text-gray-500">
+                                显示 {{ orders.start_index }} 到 {{ orders.end_index }} 条记录，共 {{ paginator.count }} 条记录
+                            </div>
+                            <div class="flex gap-2">
+                                {% if orders.has_previous %}
+                                    <a href="?page={{ orders.previous_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-50" disabled>
+                                        <i class="fa fa-chevron-left"></i>
+                                    </button>
+                                {% endif %}
+                                {% for num in paginator.page_range %}
+                                    {% if num == current_page %}
+                                        <button class="px-3 py-1 border border-primary bg-primary text-white rounded-md">{{ num }}</button>
+                                    {% else %}
+                                        <a href="?page={{ num }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">{{ num }}</a>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if orders.has_next %}
+                                    <a href="?page={{ orders.next_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-50" disabled>
+                                        <i class="fa fa-chevron-right"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 新增客户模态框 -->
+    <div id="add-customer-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold text-gray-800">新增客户资料</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="add-customer-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="form-label">客户编号<span class="text-danger">*</span></label>
+                            <input type="text" class="form-input" name="company_id" required>
+                        </div>
+                        <div>
+                            <label class="form-label">客户单位名称<span class="text-danger">*</span></label>
+                            <input type="text" class="form-input" name="company_name" required>
+                        </div>
+                        <div>
+                            <label class="form-label">单位法人代表</label>
+                            <input type="text" class="form-input" name="legal_representative">
+                        </div>
+                        <div>
+                            <label class="form-label">银行账号</label>
+                            <input type="text" class="form-input" name="bank_account">
+                        </div>
+                        <div>
+                            <label class="form-label">联系电话 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-input" name="contact_phone" required>
+                        </div>
+                        <div class="relative">
+                        <label class="form-label">满意度</label>
+                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                            <button type="button" id="decrease-satisfaction" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors">
+                                <i class="fa fa-chevron-down"></i>
+                            </button>
+                            <div class="flex-1 text-center py-2 text-gray-800" id="satisfaction-display">5</div>
+                            <button type="button" id="increase-satisfaction" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors">
+                                <i class="fa fa-chevron-up"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" name="satisfaction" id="satisfaction-input" value="5">
+                    </div>
+
+                        <div>
+                            <label class="form-label">所在区域</label>
+                            <select class="form-input" name="region">
+                                <option value="">请选择区域</option>
+                                <option value="beijing">北京</option>
+                                <option value="shanghai">上海</option>
+                                <option value="guangzhou">广州</option>
+                                <option value="shenzhen">深圳</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" id="cancel-add" class="btn btn-secondary">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+
+
+    <script>
+        // 侧边栏折叠
+        document.getElementById('sidebar-toggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        //满意度
+        const satisfactionDisplay = document.getElementById('satisfaction-display');
+        const satisfactionInput = document.getElementById('satisfaction-input');
+        const decreaseBtn = document.getElementById('decrease-satisfaction');
+        const increaseBtn = document.getElementById('increase-satisfaction');
+        let currentValue = 5; // 默认值
+        function updateSatisfaction(value) {
+            if (value < 1) value = 1;
+            if (value > 10) value = 10;
+            currentValue = value;
+            satisfactionDisplay.textContent = currentValue;
+            satisfactionInput.value = currentValue; // 同步到隐藏input，用于表单提交
+        }
+        decreaseBtn.addEventListener('click', () => {
+            updateSatisfaction(currentValue - 1);
+        });
+        increaseBtn.addEventListener('click', () => {
+            updateSatisfaction(currentValue + 1);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement === decreaseBtn || 
+                document.activeElement === increaseBtn ||
+                document.activeElement === satisfactionDisplay) {
+                if (e.key === 'ArrowUp') {
+                    updateSatisfaction(currentValue + 1);
+                } else if (e.key === 'ArrowDown') {
+                    updateSatisfaction(currentValue - 1);
+                }
+            }
+        });
+
+
+        // 新建客户
+        document.addEventListener("DOMContentLoaded", () => {
+            const modal = document.getElementById('add-customer-modal');
+            const addCustomerBtn = document.getElementById('add-customer-btn');
+            const closeModalBtn = document.getElementById('close-modal');
+            const cancelAddBtn = document.getElementById('cancel-add');
+            const addForm = document.getElementById('add-customer-form');
+            addCustomerBtn.addEventListener('click', () => {
+                modal.classList.remove('hidden');
+                addForm.reset();
+            });
+            closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            cancelAddBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.add('hidden');
+            });
+            addForm.addEventListener('submit', async (e) => {
+                e.preventDefault(); // 阻止默认表单提交
+
+                try {
+                    const formData = {
+                        company_id: addForm.querySelector('input[name="company_id"]').value.trim(),
+                        company_name: addForm.querySelector('input[name="company_name"]').value.trim(),
+                        legal_representative: addForm.querySelector('input[name="legal_representative"]').value.trim() || null,
+                        region: addForm.querySelector('select[name="region"]').value || null,
+                        bank_account: addForm.querySelector('input[name="bank_account"]').value.trim() || null,
+                        contact_phone: addForm.querySelector('input[name="contact_phone"]').value.trim() || null,
+                        satisfaction: addForm.querySelector('input[name="satisfaction"]').value.trim() || null
+                    };
+                    if (!formData.company_id) {
+                        alert('请填写公司代码!');
+                        return;
+                    }
+                    if (!formData.company_name) {
+                        alert('请填写公司名称!');
+                        return;
+                    }
+                    const response = await fetch("/dashboard/customer/add/", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData) 
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.status === 'success') {
+                        alert(result.message);
+                        modal.classList.add('hidden');
+                        window.location.reload();
+                    } else {
+                        alert(`提交失败：${result.message || '未知错误'}`);
+                    }
+                } catch (error) {
+                    alert(`请求失败：${error.message || '网络异常，请稍后重试'}`);
+                }
+            });
+        });
+    
+        
+        // 查询结果
+        document.addEventListener('DOMContentLoaded', function () {
+        const searchBtn = document.getElementById('searchBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultContainer = document.getElementById('resultTableContainer');
+
+        searchBtn.addEventListener('click', async () => {
+            const form = searchBtn.closest('.card');
+            const formData = {
+                company_name: form.querySelector('input[name="company_name"]').value.trim(),
+                company_id: form.querySelector('input[name="company_id"]').value.trim(),
+                region: form.querySelector('select[name="region"]').value,
+                product_id: form.querySelector('select[name="product_name"]').value
+            };
+            try {
+                const params = new URLSearchParams(formData);
+                const response = await fetch(`/dashboard/customer/search/?${params}`);
+                if (!response.ok) {
+                    throw new Error('网络错误');
+                }
+                const result = await response.json();
+                if (result.status === 'success') {
+                    renderResults(result.data);
+                } else {
+                    resultContainer.innerHTML = `<p class="text-red-500">${result.message}</p>`;
+                }
+            } catch (error) {
+                resultContainer.innerHTML = `<p class="text-red-500">查询失败：${error.message}</p>`;
+            }
+        });
+        resetBtn.addEventListener('click', () => {
+            const form = resetBtn.closest('.card');
+            form.querySelectorAll('input, select').forEach(el => {
+                if (el.tagName === 'INPUT') {
+                    el.value = '';
+                } else {
+                    el.value = '';
+                }
+            });
+            resultContainer.innerHTML = ''; // 清空结果
+        });
+        function renderResults(customers) {
+            const tbody = document.getElementById('orderTableBody');
+
+            if (!customers || customers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">未找到符合条件的客户。</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let rows = '';
+            customers.forEach(c => {
+                rows += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${c.company_id || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${c.company_name || '-'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.region || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.contact_people || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.contact_phone || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.product || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <img class="h-6 w-6 rounded-full mr-2" src="https://picsum.photos/id/1066/30/30" alt="销售员">
+                                <span class="text-sm text-gray-900">${c.salesman || '-'}</span>
+                            </div>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = rows;
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客户支持管理</title>
+    <!-- 引入外部库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Tailwind自定义配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#F5222D',
+                        info: '#1890FF',
+                        light: '#F5F7FA',
+                        dark: '#1D2129'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .sidebar-item { @apply flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200; }
+            .sidebar-item.active { @apply bg-primary/10 text-primary font-medium; }
+            .btn { @apply px-4 py-2 rounded-lg font-medium transition-all duration-200; }
+            .btn-primary { @apply bg-primary text-white hover:bg-primary/90; }
+            .btn-secondary { @apply bg-white border border-gray-300 text-gray-700 hover:bg-gray-50; }
+            .card { @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden; }
+            .form-input { @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all; }
+            .form-label { @apply block text-sm font-medium text-gray-700 mb-1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 侧边栏（共用） -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 h-full transition-all duration-300 transform z-30">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                        <i class="fa fa-users text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800">客户信息管理系统</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <nav class="space-y-1">
+                    <a href="{% url 'dashboard' %}" class="sidebar-item" data-target="dashboard">
+                        <i class="fa fa-dashboard w-5 text-center"></i>
+                        <span>控制面板</span>
+                    </a>
+                    <a href="{% url 'customer' %}" class="sidebar-item" data-target="customer">
+                        <i class="fa fa-id-card w-5 text-center"></i>
+                        <span>客户资料管理</span>
+                    </a>
+                    <a href="{% url 'support' %}" class="sidebar-item active" data-target="support">
+                        <i class="fa fa-life-ring w-5 text-center"></i>
+                        <span>客户支持管理</span>
+                    </a>
+                    <a href="{% url 'service' %}" class="sidebar-item" data-target="after-sales">
+                        <i class="fa fa-calendar-check-o w-5 text-center"></i>
+                        <span>售后服务管理</span>
+                    </a>
+                    <a href="{% url 'complaint' %}" class="sidebar-item" data-target="complaint">
+                        <i class="fa fa-exclamation-triangle w-5 text-center"></i>
+                        <span>投诉管理</span>
+                    </a>
+                    <a href="{% url 'feedback' %}" class="sidebar-item" data-target="feedback">
+                        <i class="fa fa-commenting-o w-5 text-center"></i>
+                        <span>新品市场反馈</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
+                <div class="flex items-center gap-3">
+                    <img src="https://picsum.photos/id/1005/40/40" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <p class="font-medium text-sm">{{username}}</p>
+                        <p class="text-xs text-gray-500">{{role}}</p>
+                    </div>
+                    <a href="{% url 'logout' %}" class="ml-auto text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-sign-out"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- 主内容区 -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- 顶部导航（共用） -->
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-20">
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle" class="lg:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                </div>
+            </header>
+            
+            <!-- 客户支持管理核心内容 -->
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div id="support" class="page-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">客户支持管理</h2>
+                        <div class="flex gap-3">
+                            <button class="btn btn-secondary" id="btn-open-upload-modal">
+                                <i class="fa fa-upload mr-2"></i>上传文档
+                            </button>
+                            <button class="btn btn-primary" id="btn-open-training-modal">
+                                <i class="fa fa-plus mr-2"></i>新增培训计划
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 上传文件模态框 -->
+                    <div id="modal-upload" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                        <div class="bg-white rounded-xl w-full max-w-md p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold text-gray-800">上传技术文件</h3>
+                                <button class="btn-close-modal text-gray-500 hover:text-gray-700" data-target="modal-upload">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                            
+                            <form id="form-file-upload" enctype="multipart/form-data" method="post">
+                                {% csrf_token %}
+                                <div class="mb-4">
+                                    <label class="form-label" for="fileTitle">文件标题</label>
+                                    <input type="text" id="fileTitle" name="file_name" class="form-input" required placeholder="请输入文件标题">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label block mb-2 font-medium text-gray-700" for="fileUpload">选择文件</label>
+                                    <label 
+                                        for="fileUpload" 
+                                        class="flex items-center justify-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 hover:border-gray-400 transition-colors duration-150">
+                                        <svg class="w-5 h-5 mr-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M16.88 9.94a.75.75 0 00-1.06-1.06L11 13.69V3.75a.75.75 0 00-1.5 0v9.94l-4.82-4.81a.75.75 0 10-1.06 1.06l6.25 6.25a.75.75 0 001.06 0l6.25-6.25z" />
+                                        </svg>
+                                        <span id="fileUploadLabelText">点击选择文件</span>
+                                    </label>
+                                    <input type="file" id="fileUpload" name="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.mp4" required class="hidden">
+                                    <p class="text-xs text-gray-500 mt-1">支持格式: PDF、Word、PPT、Excel、MP4, 最大500MB</p>
+                                </div>
+                                
+                                <div class="mb-6">
+                                    <label class="form-label" for="fileDescription">文件描述</label>
+                                    <textarea id="fileDescription" name="description" class="form-input" rows="3" placeholder="请输入文件描述"></textarea>
+                                </div>
+                                
+                                <div class="flex justify-end gap-3">
+                                    <button type="button" class="btn btn-secondary btn-close-modal" data-target="modal-upload">取消</button>
+                                    <button type="submit" class="btn btn-primary">确认上传</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 支持管理选项卡 -->
+                    <div class="mb-6 border-b border-gray-200">
+                        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="support-tabs" role="tablist">
+                            <li class="mr-2" role="presentation">
+                                <button class="inline-block p-4 border-b-2 border-primary text-primary rounded-t-lg tab-btn" data-target="#technical-support">技术支持</button>
+                            </li>
+                            <li class="mr-2" role="presentation">
+                                <button class="inline-block p-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 rounded-t-lg tab-btn" data-target="#training">技术服务培训</button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 技术支持 -->
+                    <div id="technical-support" class="support-tab-content">
+                        <div class="card mb-6">
+                            <div class="p-6 border-b border-gray-100">
+                                <h3 class="font-bold text-lg">产品使用培训文档</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {% for f in file %}
+                                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                        <div class="flex items-center mb-3">
+                                            <div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary mr-3">
+                                                {% if ".pdf" in f.file.name|lower %}
+                                                    <i class="fa fa-file-pdf-o"></i>
+                                                {% elif ".doc" in f.file.name|lower or ".docx" in f.file.name|lower %}
+                                                    <i class="fa fa-file-word-o"></i>
+                                                {% elif ".xls" in f.file.name|lower or ".xlsx" in f.file.name|lower %}
+                                                    <i class="fa fa-file-excel-o"></i>
+                                                {% else %}
+                                                    <i class="fa fa-file-o"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium">{{ f.file_name }}</h4>
+                                                <p class="text-sm text-gray-500">
+                                                    {{ f.file.size|filesizeformat }}
+                                                    · {{ f.create_time|date:"Y-m-d" }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-end gap-2">
+                                            <a href="{{ f.file.url }}" class="text-gray-600 hover:text-primary p-1" download>
+                                                <i class="fa fa-download"></i> 下载
+                                            </a>
+                                            <button class="text-gray-600 hover:text-danger p-1 btn-delete-file" data-file-id="{{ f.file_id }}">
+                                                <i class="fa fa-trash"></i> 删除
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% empty %} 
+                                    <div class="col-span-full text-center py-10 text-gray-500">
+                                        <i class="fa fa-file-o text-4xl mb-3"></i>
+                                        <p>暂无上传的文件</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="p-6 border-b border-gray-100">
+                                <h3 class="font-bold text-lg">常见问题解答</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    {% for faq in file %}
+                                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                        <button class="faq-toggle w-full flex justify-between items-center p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors">
+                                            <span class="font-medium">{{ faq.file_name }}</span>
+                                            <i class="fa fa-chevron-down text-gray-500 transition-transform"></i>
+                                        </button>
+                                        <div class="faq-content hidden p-4 border-t border-gray-200">
+                                            <p class="text-gray-700">{{ faq.description }}</p>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <div class="text-center py-8 text-gray-500">
+                                        <i class="fa fa-question-circle text-3xl mb-2"></i>
+                                        <p>暂无常见问题数据</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 技术服务培训 -->
+                    <div id="training" class="support-tab-content hidden">
+                        <div class="card mb-6">
+                            <div class="p-6 border-b border-gray-100">
+                                <h3 class="font-bold text-lg">培训计划</h3>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">培训主题</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">培训日期</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">培训对象</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">培训类型</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                            <!-- th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</!-->
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for t in trainings %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900">{{t.training_topic}}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{t.training_time|date:"Y-m-d H:i"}}</td>
+                                            {% if t.training_type == 1 %}
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{t.salesman.salesman_name}}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">内部培训</td>
+                                            {% elif t.training_type == 2 %}
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{t.company.company_name}}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">外部培训</td>
+                                            {% else %}
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+                                            {% endif %}
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                    {% if t.training_status == 0 %}
+                                                        bg-blue-100 text-blue-800
+                                                    {% elif t.training_status == 1 %}
+                                                        bg-yellow-100 text-yellow-800
+                                                    {% elif t.training_status == 2 %}
+                                                        bg-green-100 text-green-800
+                                                    {% endif %}">
+                                                    {{ t.get_training_status_display }}
+                                                </span>
+                                            </td>
+                                            <!-- td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <a href="#" class="text-primary hover:text-primary/80">编辑</a>
+                                                <span class="mx-2">|</span>
+                                                <a href="#" class="text-danger hover:text-danger/80">删除</a>
+                                            </!-->
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                                <i class="fa fa-calendar-o text-3xl mb-2"></i>
+                                                <p>暂无培训计划数据</p>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                                <div class="text-sm text-gray-500">
+                                    {% if trainings %}
+                                        显示 {{ trainings.start_index }} 到 {{ trainings.end_index }} 条,共 {{ trainings.paginator.count }} 条记录
+                                    {% else %}
+                                        显示 0 到 0 条,共 0 条记录
+                                    {% endif %}
+                                </div>
+                                <div class="flex gap-2">
+                                    {% if trainings and trainings.paginator.num_pages > 1 %}
+                                        {% if trainings.has_previous %}
+                                            <a href="?page={{ trainings.previous_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50">
+                                                <i class="fa fa-chevron-left"></i>
+                                            </a>
+                                        {% else %}
+                                            <button class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-50" disabled>
+                                                <i class="fa fa-chevron-left"></i>
+                                            </button>
+                                        {% endif %}
+                                        {% for num in trainings.paginator.page_range %}
+                                            {% if num == trainings.number %}
+                                                <button class="px-3 py-1 border border-primary bg-primary text-white rounded-md" disabled>{{ num }}</button>
+                                            {% else %}
+                                                <a href="?page={{ num }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">{{ num }}</a>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if trainings.has_next %}
+                                            <a href="?page={{ trainings.next_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                                <i class="fa fa-chevron-right"></i>
+                                            </a>
+                                        {% else %}
+                                            <button class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-50" disabled>
+                                                <i class="fa fa-chevron-right"></i>
+                                            </button>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 新增培训计划模态框（核心修改：培训对象动态选择框） -->
+                    <div id="modal-add-training" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                        <div class="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                            <div class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                                <h3 class="text-xl font-bold text-gray-800">新增培训计划</h3>
+                                <button class="btn-close-modal text-gray-500 hover:text-gray-700" data-target="modal-add-training">
+                                    <i class="fa fa-times text-xl"></i>
+                                </button>
+                            </div>
+                            <div class="p-6">
+                                <form id="form-add-training">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div>
+                                            <label class="form-label">培训编号<span class="text-danger">*</span></label>
+                                            <input type="text" class="form-input" name="training_id" required>
+                                        </div>
+                                        <div>
+                                            <label class="form-label">培训主题<span class="text-danger">*</span></label>
+                                            <input type="text" class="form-input" name="training_topic" required>
+                                        </div>
+                                        <div>
+                                            <label class="form-label">培训类型<span class="text-danger">*</span></label>
+                                            <select class="form-input" name="training_type" id="training-type-select" required>
+                                                <option value="">请选择培训类型</option>
+                                                <option value="inner">内部培训（面向销售人员）</option>
+                                                <option value="outer">外部培训（面向合作公司）</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label">培训时间<span class="text-danger">*</span></label>
+                                            <input type="datetime-local" class="form-input" name="training_time" required>
+                                        </div>
+                                        <!-- 核心修改：培训对象改为动态选择框 -->
+                                        <div>
+                                            <label class="form-label">培训对象<span class="text-danger">*</span></label>
+                                            <select class="form-input" name="training_target_id" id="training-target-select" required disabled>
+                                                <option value="">请先选择培训类型</option>
+                                            </select>
+                                            <input type="hidden" name="training_target_type" id="training-target-type">
+                                        </div>
+                                        <div>
+                                            <label class="form-label">培训状态</label>
+                                            <select class="form-input" name="training_status">
+                                                <option value="0" selected>未开始</option>
+                                                <option value="1">进行中</option>
+                                                <option value="2">已完成</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-6">
+                                        <label class="form-label">培训备注</label>
+                                        <textarea class="form-input" name="training_remark" rows="3" placeholder="可选：填写培训内容、注意事项等"></textarea>
+                                    </div>
+                                    <div class="flex justify-end gap-3">
+                                        <button type="button" class="btn btn-secondary btn-close-modal" data-target="modal-add-training">取消</button>
+                                        <button type="submit" class="btn btn-primary">保存</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    {{ salesman|json_script:"salesman-data" }}
+    {{ company|json_script:"company-data" }}
+    <script>
+        // 等待DOM完全加载后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. 侧边栏折叠功能
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.getElementById('sidebar');
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('-translate-x-full');
+                });
+            }
+
+            // 2. 选项卡切换功能
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    tabBtns.forEach(b => {
+                        b.classList.remove('border-primary', 'text-primary');
+                        b.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    this.classList.remove('border-transparent', 'text-gray-500');
+                    this.classList.add('border-primary', 'text-primary');
+                    const targetId = this.getAttribute('data-target');
+                    document.querySelectorAll('.support-tab-content').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    const targetContent = document.querySelector(targetId);
+                    if (targetContent) {
+                        targetContent.classList.remove('hidden');
+                    }
+                });
+            });
+
+            // 3. FAQ折叠功能
+            const faqToggles = document.querySelectorAll('.faq-toggle');
+            faqToggles.forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('i');
+                    if (content && icon) {
+                        content.classList.toggle('hidden');
+                        icon.classList.toggle('rotate-180');
+                    }
+                });
+            });
+
+            // 4. 模态框通用控制
+            const openModal = function(targetModalId) {
+                const modal = document.getElementById(targetModalId);
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    // 打开培训模态框时，重置培训类型和对象选择框
+                    if (targetModalId === 'modal-add-training') {
+                        document.getElementById('training-type-select').value = '';
+                        const targetSelect = document.getElementById('training-target-select');
+                        targetSelect.innerHTML = '<option value="">请先选择培训类型</option>';
+                        targetSelect.disabled = true;
+                        document.getElementById('training-target-type').value = '';
+                    }
+                }
+            };
+            const closeModal = function(targetModalId) {
+                const modal = document.getElementById(targetModalId);
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+            };
+            const btnOpenUpload = document.getElementById('btn-open-upload-modal');
+            if (btnOpenUpload) {
+                btnOpenUpload.addEventListener('click', function() {
+                    openModal('modal-upload');
+                });
+            }
+            const btnOpenTraining = document.getElementById('btn-open-training-modal');
+            if (btnOpenTraining) {
+                btnOpenTraining.addEventListener('click', function() {
+                    openModal('modal-add-training');
+                });
+            }
+            const closeModalBtns = document.querySelectorAll('.btn-close-modal');
+            closeModalBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetModalId = this.getAttribute('data-target');
+                    closeModal(targetModalId);
+                });
+            });
+            const modals = document.querySelectorAll('[id^="modal-"]');
+            modals.forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) { // 仅点击背景层时关闭
+                        closeModal(this.id);
+                    }
+                });
+            });
+            const fileUploadInput = document.getElementById('fileUpload');
+            const fileUploadLabelText = document.getElementById('fileUploadLabelText');
+            if (fileUploadInput && fileUploadLabelText) {
+                fileUploadInput.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        fileUploadLabelText.textContent = this.files[0].name;
+                    } else {
+                        fileUploadLabelText.textContent = '点击选择文件';
+                    }
+                });
+            }
+
+            const formFileUpload = document.getElementById('form-file-upload');
+            if (formFileUpload) {
+                formFileUpload.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>上传中...';
+                    
+                    try {
+                        const formData = new FormData(this); // 修复：正确获取表单数据
+                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                        if (csrfToken) {
+                            formData.append('csrfmiddlewaretoken', csrfToken);
+                        }
+
+                        const response = await fetch("{% url 'upload_file' %}", {
+                            method: 'POST',
+                            body: formData, // 无需设置Content-Type，FormData自动处理
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            alert('文件上传成功！');
+                            closeModal('modal-upload');
+                            this.reset();
+                            fileUploadLabelText.textContent = '点击选择文件';
+                            window.location.reload();
+                        } else {
+                            alert('上传失败：' + (result.message || '未知错误'));
+                        }
+                    } catch (error) {
+                        alert('上传出错：' + error.message);
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                });
+            }
+
+            // 6. 文件删除功能 - 修复：CSRF令牌传递
+            const deleteFileBtns = document.querySelectorAll('.btn-delete-file');
+            deleteFileBtns.forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const fileId = this.getAttribute('data-file-id');
+                    if (!confirm('确定删除该文件吗？删除后无法恢复！')) {
+                        return;
+                    }
+                    
+                    try {
+                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                        const response = await fetch("{% url 'delete_file' %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken || '' // 修复：添加CSRF令牌
+                            },
+                            body: new URLSearchParams({ file_id: fileId })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            alert(result.message);
+                            window.location.reload();
+                        } else {
+                            alert('删除失败：' + (result.message || '未知错误'));
+                        }
+                    } catch (error) {
+                        alert('删除出错：' + error.message);
+                    }
+                });
+            });
+
+            
+            const salesmanList = JSON.parse(document.getElementById("salesman-data").textContent);
+            const companyList = JSON.parse(document.getElementById("company-data").textContent);
+            const trainingTypeSelect = document.getElementById('training-type-select');
+            const trainingTargetSelect = document.getElementById('training-target-select');
+            const trainingTargetType = document.getElementById('training-target-type');
+            
+            if (trainingTypeSelect && trainingTargetSelect && trainingTargetType) {
+                trainingTypeSelect.addEventListener('change', function() {
+                    const selectedType = this.value;
+                    trainingTargetSelect.innerHTML = '';
+                    
+                    // 修复：属性名匹配后端返回的销售人员字段
+                    if (selectedType === 'inner') {
+                        trainingTargetType.value = 'salesman';
+                        trainingTargetSelect.disabled = false;
+                        
+                        if (salesmanList.length > 0 && salesmanList[0].salesman_id) {
+                            const defaultOption = document.createElement('option');
+                            defaultOption.value = '';
+                            defaultOption.textContent = '请选择销售人员';
+                            trainingTargetSelect.appendChild(defaultOption);
+                            
+                            salesmanList.forEach(salesman => {
+                                const option = document.createElement('option');
+                                option.value = salesman.salesman_id; // 修复：使用正确的ID字段
+                                option.textContent = salesman.salesman_name; // 修复：使用正确的名称字段
+                                trainingTargetSelect.appendChild(option);
+                            });
+                        } else {
+                            const noDataOption = document.createElement('option');
+                            noDataOption.value = '';
+                            noDataOption.textContent = '暂无销售人员数据';
+                            trainingTargetSelect.appendChild(noDataOption);
+                            trainingTargetSelect.disabled = true;
+                        }
+                    } 
+                    else if (selectedType === 'outer') {
+                        trainingTargetType.value = 'company';
+                        trainingTargetSelect.disabled = false;
+                        
+                        if (companyList.length > 0 && companyList[0].company_id) {
+                            const defaultOption = document.createElement('option');
+                            defaultOption.value = '';
+                            defaultOption.textContent = '请选择合作公司';
+                            trainingTargetSelect.appendChild(defaultOption);
+                            
+                            companyList.forEach(company => {
+                                const option = document.createElement('option');
+                                option.value = company.company_id;
+                                option.textContent = company.company_name;
+                                trainingTargetSelect.appendChild(option);
+                            });
+                        } else {
+                            const noDataOption = document.createElement('option');
+                            noDataOption.value = '';
+                            noDataOption.textContent = '暂无合作公司数据';
+                            trainingTargetSelect.appendChild(noDataOption);
+                            trainingTargetSelect.disabled = true;
+                        }
+                    } else {
+                        trainingTargetType.value = '';
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = '请先选择培训类型';
+                        trainingTargetSelect.appendChild(defaultOption);
+                        trainingTargetSelect.disabled = true;
+                    }
+                });
+            }
+
+            // 8. 新增培训计划表单 - 修复：未定义变量、表单数据获取
+            const formAddTraining = document.getElementById('form-add-training');
+            if (formAddTraining) {
+                formAddTraining.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>保存中...';
+                    
+                    try {
+                        const formData = new FormData(this);
+                        let training_time = formData.get('training_time')
+                        if (training_time) {
+                            training_time = training_time.replace('T', ' ') + ':00'; 
+                        }
+                        const trainingType = formData.get('training_type');
+                        const targetId = formData.get('training_target_id');
+                        const targetType = formData.get('training_target_type');
+                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                        const data = {
+                            training_id: formData.get('training_id'),
+                            training_topic: formData.get('training_topic'),
+                            training_type: trainingType === 'inner' ? 1 : 2, // 映射为后端需要的数字类型
+                            training_time: training_time,
+                            training_status: parseInt(formData.get('training_status') || 0),
+                            // training_remark: formData.get('training_remark') || ''
+                        };
+                        if (targetType === 'salesman') {
+                            data.salesman_id = targetId;
+                        } else if (targetType === 'company') {
+                            data.company_id = targetId;
+                        }
+
+                        const response = await fetch("{% url 'add_training' %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken || ''
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        const result = await response.json();
+                        
+                        if (result.status === 'success') {
+                            alert('培训计划添加成功！');
+                            closeModal('modal-add-training');
+                            this.reset();
+                            window.location.reload();
+                        } else {
+                            alert('添加失败：' + (result.message || '未知错误'));
+                        }
+                    } catch (error) {
+                        alert('添加出错：' + error.message);
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

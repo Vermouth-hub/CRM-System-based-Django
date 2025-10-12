@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新品市场反馈</title>
+    <!-- 引入外部库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- Tailwind自定义配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#F5222D',
+                        info: '#1890FF',
+                        light: '#F5F7FA',
+                        dark: '#1D2129'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .sidebar-item { @apply flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200; }
+            .sidebar-item.active { @apply bg-primary/10 text-primary font-medium; }
+            .btn { @apply px-4 py-2 rounded-lg font-medium transition-all duration-200; }
+            .btn-primary { @apply bg-primary text-white hover:bg-primary/90; }
+            .btn-secondary { @apply bg-white border border-gray-300 text-gray-700 hover:bg-gray-50; }
+            .card { @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden; }
+            .form-input { @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all; }
+            .form-label { @apply block text-sm font-medium text-gray-700 mb-1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 侧边栏（共用） -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 h-full transition-all duration-300 transform z-30">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                        <i class="fa fa-users text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800">客户信息管理系统</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <nav class="space-y-1">
+                    <a href="{% url 'dashboard' %}" class="sidebar-item active" data-target="dashboard">
+                        <i class="fa fa-dashboard w-5 text-center"></i>
+                        <span>控制面板</span>
+                    </a>
+                    <a href="{% url 'customer' %}" class="sidebar-item" data-target="customer">
+                        <i class="fa fa-id-card w-5 text-center"></i>
+                        <span>客户资料管理</span>
+                    </a>
+                    <a href="{% url 'support' %}" class="sidebar-item" data-target="support">
+                        <i class="fa fa-life-ring w-5 text-center"></i>
+                        <span>客户支持管理</span>
+                    </a>
+                    <a href="{% url 'service' %}" class="sidebar-item" data-target="service">
+                        <i class="fa fa-calendar-check-o w-5 text-center"></i>
+                        <span>售后服务管理</span>
+                    </a>
+                    <a href="{% url 'complaint' %}" class="sidebar-item" data-target="complaint">
+                        <i class="fa fa-exclamation-triangle w-5 text-center"></i>
+                        <span>投诉管理</span>
+                    </a>
+                    <a href="{% url 'feedback' %}" class="sidebar-item active" data-target="feedback">
+                        <i class="fa fa-commenting-o w-5 text-center"></i>
+                        <span>新品市场反馈</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
+                <div class="flex items-center gap-3">
+                    <img src="https://picsum.photos/id/1005/40/40" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <p class="font-medium text-sm">{{username}}</p>
+                        <p class="text-xs text-gray-500">{{role}}</p>
+                    </div>
+                    <a href="{% url 'logout' %}" class="ml-auto text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-sign-out"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- 主内容区 -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- 顶部导航（共用） -->
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-20">
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle" class="lg:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                    <div class="relative">
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                </div>
+            </header>
+            
+            <!-- 新品市场反馈核心内容 -->
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div id="feedback" class="page-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">新品市场反馈</h2>
+                        <div class="flex gap-3">
+                            <!-- button class="btn btn-secondary">
+                                <i class="fa fa-download mr-2"></i>导出分析报告
+                            </!-->
+                            <button class="btn btn-primary" id="record-feedback-btn">
+                                <i class="fa fa-plus mr-2"></i>记录新反馈
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 反馈统计卡片 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="card p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm mb-1">总反馈数量</p>
+                                    <h3 class="text-3xl font-bold">{{feedback_this_month}}</h3>
+
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                    <i class="fa fa-comments text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm mb-1">正面反馈</p>
+                                    <h3 class="text-3xl font-bold">{{active_feedback}}</h3>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center text-success">
+                                    <i class="fa fa-thumbs-up text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm mb-1">负面反馈</p>
+                                    <h3 class="text-3xl font-bold">{{negative_feedback}}</h3>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center text-danger">
+                                    <i class="fa fa-thumbs-down text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 反馈分析图表 -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="card p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="font-bold text-lg">反馈分布</h3>
+                                <div class="flex gap-2">
+                                    <button class="px-3 py-1 text-sm bg-primary/10 text-primary rounded-md">全部产品</button>
+                                </div>
+                            </div>
+                            <div class="h-80">
+                                <canvas id="feedbackTypeChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="font-bold text-lg">反馈趋势分析</h3>
+                                <div class="flex gap-2">
+                                    <button class="px-3 py-1 text-sm bg-primary/10 text-primary rounded-md">近6月</button>
+                                </div>
+                            </div>
+                            <div class="h-80">
+                                <canvas id="feedbackTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 反馈列表 -->
+                    <div class="card">
+                        <div class="p-6 border-b border-gray-100">
+                            <div class="flex flex-wrap justify-between items-center gap-4">
+                                <h3 class="font-bold text-lg">最新反馈列表</h3>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">反馈编号</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">产品名称</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">反馈公司</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">反馈类型</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">反馈时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for f in feedbacks %}
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{f.feedback_id}}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{f.product.product_name}}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <img class="h-6 w-6 rounded-full mr-2" src="https://picsum.photos/id/1027/30/30" alt="反馈人头像">
+                                                <span class="text-sm text-gray-900">{{f.company.company_name}}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{f.get_feedback_type_display}}</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{f.feedback_time|date:"Y年m月d日 H:i"}}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                            <div class="text-sm text-gray-500">显示 {{feedbacks.start_index}}  到 {{feedbacks.end_index}} 条，共 {{paginator.count}} 条记录</div>
+                            <div class="flex gap-2">
+                                {% if feedbacks.has_previous %}
+                                    <a href="?page={{ feedbacks.previous_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-50" disabled>
+                                        <i class="fa fa-chevron-left"></i>
+                                    </button>
+                                {% endif %}
+                                {% for num in paginator.page_range %}
+                                    {% if num == current_page %}
+                                        <button class="px-3 py-1 border border-primary bg-primary text-white rounded-md">{{ num }}</button>
+                                    {% else %}
+                                        <a href="?page={{ num }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">{{ num }}</a>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if feedbacks.has_next %}
+                                    <a href="?page={{ feedbacks.next_page_number }}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="px-3 py-1 border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-50" disabled>
+                                        <i class="fa fa-chevron-right"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 记录新反馈模态框 -->
+    <div id="add-feedback-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold text-gray-800">记录新品市场反馈</h3>
+                <button id="close-feedback-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="add-feedback-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="form-label">反馈编号<span class="text-danger">*</span></label>
+                            <input type="text" class="form-input" name="feedback_id" required>
+                        </div>
+                        <div>
+                            <label class="form-label">产品名称 <span class="text-danger">*</span></label>
+                            <select class="form-input" name="product" required>
+                                <option value="">请选择产品</option>
+                                {% for p in products %}
+                                    <option value="{{ p.product_id }}">{{ p.product_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">反馈公司 <span class="text-danger">*</span></label>
+                            <select class="form-input" name="company" required>
+                                <option value="">请选择反馈公司</option>
+                                {% for c in companies %}
+                                    <option value="{{ c.company_id }}">{{ c.company_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">反馈类型 <span class="text-danger">*</span></label>
+                            <select class="form-input" name="feedback_type" required>
+                                <option value="">请选择反馈类型</option>
+                                <option value="positive">正面反馈</option>
+                                <option value="negative">负面反馈</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">反馈日期 <span class="text-danger">*</span></label>
+                            <input type="date" class="form-input" name="feedback_time" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label">反馈内容 <span class="text-danger">*</span></label>
+                            <textarea class="form-input h-32" placeholder="请详细记录客户的反馈内容..." name="content" required></textarea>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" id="cancel-feedback" class="btn btn-secondary">取消</button>
+                        <button type="submit" class="btn btn-primary">保存反馈记录</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 侧边栏折叠 + 图表初始化 + 模态框JS -->
+    {{ product_names|json_script:"product_names" }}
+    {{ feedback_counts|json_script:"feedback_counts" }}
+    {{ month|json_script:"month" }}
+    {{ active_counts|json_script:"active_counts" }}
+    {{ negative_counts|json_script:"negative_counts" }}
+    <script>
+        // 侧边栏折叠
+        document.getElementById('sidebar-toggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        });
+        
+        // 记录新反馈模态框控制
+        document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.getElementById('add-feedback-modal');
+        const openBtn = document.getElementById('record-feedback-btn'); // 你需要给触发按钮加 id
+        const closeBtn = document.getElementById('close-feedback-modal');
+        const cancelBtn = document.getElementById('cancel-feedback');
+        const form = document.getElementById('add-feedback-form');
+        openBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            form.reset();
+        });
+        closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = {
+                feedback_id: form.querySelector('input[name="feedback_id"]').value.trim(),
+                product: form.querySelector('select[name="product"]').value,
+                company: form.querySelector('select[name="company"]').value,
+                feedback_type: form.querySelector('select[name="feedback_type"]').value,
+                feedback_time: form.querySelector('input[name="feedback_time"]').value,
+                feedback_content: form.querySelector('textarea[name="content"]').value.trim()
+            };
+
+            // 前端验证
+            if (!formData.feedback_id || !formData.product || !formData.company || !formData.feedback_type || !formData.feedback_time || !formData.feedback_content) {
+                alert("请完整填写所有必填项！");
+                return;
+            }
+            try {
+                const response = await fetch("/dashboard/feedback/add/", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    alert(result.message);
+                    modal.classList.add('hidden');
+                    window.location.reload();
+                } else {
+                    alert(`提交失败：${result.message || '未知错误'}`);
+                }
+
+            } catch (error) {
+                alert(`请求失败：${error.message || '网络异常，请稍后重试'}`);
+            }
+        });
+    });
+        
+        // 图表初始化
+        window.addEventListener('load', function() {
+            // 反馈类型分布图表
+            const product_names = JSON.parse(document.getElementById('product_names').textContent);
+            const feedback_counts = JSON.parse(document.getElementById('feedback_counts').textContent);
+            const feedbackTypeCtx = document.getElementById('feedbackTypeChart').getContext('2d');
+            new Chart(feedbackTypeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: product_names,
+                    datasets: [{
+                        data: feedback_counts,
+                        backgroundColor: ['#52C41A', '#F5222D', '#FAAD14', '#165DFF', '#8C8C8C'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '65%'
+                }
+            });
+            
+            // 反馈趋势分析图表
+            const month = JSON.parse(document.getElementById('month').textContent);
+            const active_counts = JSON.parse(document.getElementById('active_counts').textContent);
+            const negative_counts = JSON.parse(document.getElementById('negative_counts').textContent);
+            const trendCtx = document.getElementById('feedbackTrendChart').getContext('2d');
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: month,
+                    datasets: [{
+                        label: '正面反馈',
+                        data: active_counts,
+                        borderColor: '#52C41A',
+                        backgroundColor: 'rgba(82, 196, 26, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }, {
+                        label: '负面反馈',
+                        data: negative_counts,
+                        borderColor: '#F5222D',
+                        backgroundColor: 'rgba(245, 34, 45, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        });
+        (function($) {
+            $.fn.contains = function(text) {
+                var $result = $();
+                for (var i = 0; i < this.length; i++) {
+                    if ($(this[i]).text().indexOf(text) !== -1) {
+                        $result = $result.add(this[i]);
+                    }
+                }
+                return $result;
+            };
+        })(jQuery);
+    </script>
+</body>
+</html>
+    
