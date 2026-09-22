@@ -28,6 +28,8 @@ urlpatterns = [
 
     path('dashboard/feedback', views.feedbackView, name='feedback'),
     path('dashboard/feedback/add/', views.addFeedback, name='add_feedback'),
+
     path('logout/', views.logoutView, name='logout'),
+    path('dashboard/about', views.aboutView, name='about_us'),
 
 ]   + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

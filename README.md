@@ -1,139 +1,139 @@
-## Django 从0到1快速入门🎄
+# 客户信息管理系统
 
-### 1. 运行仓库代码🚀
+> 基于 Django 与 MySQL 构建的客户关系管理（CRM）课程设计项目。系统围绕客户全生命周期，将客户资料、支持服务、售后走访、投诉处理和新品反馈集中到统一的管理后台。
 
-如果你需要深入学习django，请访问并仔细阅读
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![Django](https://img.shields.io/badge/Django-5.1-092E20?logo=django&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-4479A1?logo=mysql&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Active-22C55E)
 
-[Django官方文档]: https://docs.djangoproject.com/zh-hans/5.2/
+## 项目简介
 
-本项目只是笔者对于django的一些看法，便于初学者学习与理解，如果有错误欢迎指正。如果该项目帮助到你，我将无比兴奋。你可以下载该仓库中的代码，同时确保你的windows系统中已经安装了MySQL。请在django/management/settings中配置你的数据库，具体配置方法如下
+这是一个面向企业客户服务场景的 Web 管理系统。项目采用 Django 的 MTV 架构组织业务逻辑与页面渲染，使用 MySQL 持久化业务数据，并提供响应式的后台管理界面。登录后，用户可以在仪表盘中快速查看关键业务数据，并进入各业务模块完成维护与处理。
+
+## 功能一览
+
+| 模块 | 功能 |
+| --- | --- |
+| 控制面板 | 汇总客户、服务、投诉与反馈等业务数据，展示近期统计信息。 |
+| 客户资料管理 | 维护客户单位及其联系人、区域、满意度等基础资料，支持新增与检索。 |
+| 客户支持管理 | 管理培训计划，支持技术文档上传、下载与删除。 |
+| 售后服务管理 | 记录服务质量检查单、服务项目、负责人、服务时长与处理状态。 |
+| 投诉管理 | 新建、查看并跟进客户投诉，记录关联客户、产品与处理进度。 |
+| 新品市场反馈 | 收集客户对新品的正、负面反馈，为产品改进提供参考。 |
+| 权限与会话 | 使用 Django 身份认证实现登录、退出与需要登录的页面保护。 |
+
+## 技术栈
+
+- 后端：Python、Django 5.1、Django REST framework
+- 数据库：MySQL
+- 前端：Django Templates、Tailwind CSS、Font Awesome
+- 文件管理：Django `FileField` 与本地媒体目录
+
+## 快速开始
+
+### 1. 环境要求
+
+- Python 3.10 或更高版本
+- MySQL 8.0 或更高版本
+- pip
+
+### 2. 获取代码并创建虚拟环境
+
+```powershell
+git clone <你的仓库地址>
+cd site\django
+
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+macOS / Linux 请使用：
+
+```bash
+source .venv/bin/activate
+```
+
+### 3. 安装依赖
+
+```powershell
+pip install "Django==5.1.7" djangorestframework django-cors-headers mysqlclient
+```
+
+> 若 Windows 环境下 `mysqlclient` 安装失败，可先安装 MySQL Connector/C 与 Visual C++ 生成工具，或根据本机环境选择兼容的 MySQL 驱动。
+
+### 4. 配置数据库
+
+在 MySQL 中创建数据库：
+
+```sql
+CREATE DATABASE management DEFAULT CHARACTER SET utf8mb4;
+```
+
+然后打开 `django/management/settings.py`，根据本机数据库修改 `DATABASES`：
 
 ```python
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'xxx',	# input your table name here
-        'USER': 'root',
-        'PASSWORD': 'xxx',	# input your password here
-        'HOST': 'localhost',
-        'PORT': '3306',		# input your sql serve port here, commonly 3306
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "management",
+        "USER": "root",
+        "PASSWORD": "你的数据库密码",
+        "HOST": "127.0.0.1",
+        "PORT": "3306",
     }
 }
 ```
 
-将本项目定义好的数据库进行迁移
-
-```shell
-cd /django
-python manage.py makemigrations
-python manage.py migrate
-```
-
-完成上述步骤后运行
-
-```
-python manage.py runserver
-```
-
-如果无误的话，恭喜你成功运行了本仓库中展示的客户信息管理系统！
-
-### 2.Django从0到1🌋
-
-Django是一个完整的前后端开发框架，在成功安装Django后，你可以使用如下指令在目标文件夹target_dir创建一个项目site。
-
-此时target_dir文件夹下的目录结构如下。
-
-```shell
-django-admin startproject site target_dir
-
-# 目录结构
-target_dir/
-    manage.py
-    site/
-        __init__.py
-        settings.py
-        urls.py
-        asgi.py
-        wsgi.py
-```
-
-其中，manage.py是Django中封装好的工具管理器。你可以发现manage.py中并没有写任何有关其功能的代码，但是其实Django已经将相关功能封装在python包中，并统一通过manage.py进行管理。因此你可以通过manage.py执行相当多的工作，如开启服务器、执行数据库修改等操作。site目录下存放的是该项目的主站点，urls中定义了该项目所有定义的路径。主站点一般不用来实际编写前后端代码。
-
-Django允许你在上述的项目中创建多个子应用。
+### 5. 初始化并运行
 
 ```powershell
-python manage.py startapp myapp
-
-# 目录结构
-myapp/
-    __init__.py
-    admin.py
-    apps.py
-    migrations/
-        __init__.py
-    models.py
-    tests.py
-    views.py
-```
-
-这将在你的代码中创建一个子应用myapp，你可以将其配置到主站点中，从而通过主站点调用你创建的若干个应用程序。该目录结构中，models.py文件用来定义数据库模型，urls中用来规定该应用程序的相对路由，views中用来撰写各个urls对应的响应方法。
-
-
-
-如果是初次使用Django，我建议在该应用程序的目录下建立文件夹templates用来存放前端代码。
-
-```shell
-cd /myapp
-mkdir templates
-```
-
-此时你可以在templates建立一个前端界面
-
-```html
-<!-- hello.html -->
-<div>
-Hello, {{username}}!
-</div>
-```
-
-接着在views.py中配置响应视图。可以通过context字典将后端值传入到前端界面并显示。
-
-```python
-def helloView(request):
-	username = "Django"
-	context = {
-		'username': username,
-	}
-	
-	return render(request, "hello.html", context)
-```
-
-在/myapp/urls.py中为该视图分配urls：
-
-```python
-from django.urls import path
-from . import views
-
-
-urlpatterns = [
-    path('', views.helloView, name='hello'),
-] 
-```
-
-在主站点site/urls.py文件中
-
-```python
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", include('myapp.urls'))
-]
-```
-
-运行主站点
-
-```
+python manage.py migrate
+python manage.py createsuperuser  # 可选：创建 Django 管理员
 python manage.py runserver
 ```
 
-此时你将发现自己编写的html代码已经成功打印在服务器上，同时执行了views中的视图函数，成功将views中的值传入到前端页面。使用上述方法，你可以轻而易举的通过views从数据库中提取你需要的相关信息，并且通过context传入到前端代码，在前端代码中只需要通过`{{name}}`的方式即可调用
+浏览器打开 [http://127.0.0.1:8000/](http://127.0.0.1:8000/) 即可进入系统；Django 管理后台地址为 [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)。
+
+## 项目结构
+
+```text
+site/
+├── README.md
+└── django/
+    ├── manage.py                 # Django 命令入口
+    ├── management/               # 项目配置：设置、根路由、WSGI / ASGI
+    └── backend/                  # 核心业务应用
+        ├── models.py             # 客户、订单、服务、投诉等数据模型
+        ├── views.py              # 页面渲染与业务处理
+        ├── urls.py               # 业务路由
+        ├── forms.py              # 文件上传表单
+        ├── templates/            # 页面模板
+        ├── static/               # 静态资源
+        └── migrations/           # 数据库迁移记录
+```
+
+## 核心数据模型
+
+系统以 `Company`（客户单位）为中心，并通过外键建立业务关联：
+
+```text
+Salesman ─┬─ Order ─── Company ─── Complaint
+          │      │          │
+          │      └─ Product ─┴─ NewProductFeedback
+          ├─ Training
+          └─ Service ── CheckItemDict
+```
+
+主要模型包括：`Salesman`、`Company`、`Product`、`Order`、`Training`、`Service`、`Complaint`、`NewProductFeedback` 与 `UploadedFile`。
+
+## 开发说明
+
+- 数据模型变更后执行 `python manage.py makemigrations` 与 `python manage.py migrate`。
+- 开发环境使用 `DEBUG = True`；部署前请关闭调试模式、设置 `ALLOWED_HOSTS`，并通过环境变量管理 `SECRET_KEY` 和数据库凭据。
+- 运行期间上传的文件位于媒体目录，应避免将真实业务文件提交到 Git 仓库。
+
+---
+
+如果这个项目对你有帮助，欢迎 Star ⭐ 或提出 Issue 交流改进建议。
 

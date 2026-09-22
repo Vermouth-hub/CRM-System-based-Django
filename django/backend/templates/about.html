@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关于我们</title>
+    <!-- 外部资源引入 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#F5222D',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .sidebar-item { @apply flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200; }
+            .sidebar-item.active { @apply bg-primary/10 text-primary font-medium; }
+            .btn { @apply px-4 py-2 rounded-lg font-medium transition-all duration-200; }
+            .btn-primary { @apply bg-primary text-white hover:bg-primary/90; }
+            .team-card { @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center text-center hover:shadow-md transition-all duration-300 hover:-translate-y-1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 侧边栏导航 -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 h-full transition-all duration-300 transform z-30">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                        <i class="fa fa-users text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800">客户关系管理系统</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <nav class="space-y-1">
+                    <a href="{% url 'dashboard' %}" class="sidebar-item" data-target="dashboard">
+                        <i class="fa fa-dashboard w-5 text-center"></i>
+                        <span>控制面板</span>
+                    </a>
+                    <a href="{% url 'customer' %}" class="sidebar-item" data-target="customer">
+                        <i class="fa fa-id-card w-5 text-center"></i>
+                        <span>客户资料管理</span>
+                    </a>
+                    <a href="{% url 'support' %}" class="sidebar-item" data-target="support">
+                        <i class="fa fa-life-ring w-5 text-center"></i>
+                        <span>客户支持管理</span>
+                    </a>
+                    <a href="{% url 'service' %}" class="sidebar-item" data-target="service">
+                        <i class="fa fa-calendar-check-o w-5 text-center"></i>
+                        <span>售后服务管理</span>
+                    </a>
+                    <a href="{% url 'complaint' %}" class="sidebar-item" data-target="complaint">
+                        <i class="fa fa-exclamation-triangle w-5 text-center"></i>
+                        <span>投诉管理</span>
+                    </a>
+                    <a href="{% url 'feedback' %}" class="sidebar-item" data-target="feedback">
+                        <i class="fa fa-commenting-o w-5 text-center"></i>
+                        <span>新品市场反馈</span>
+                    </a>
+                    <a href="{% url 'about_us' %}" class="sidebar-item active" data-target="feedback">
+                        <i class="fa fa-info-circle w-5 text-center"></i>
+                        <span>关于我们</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
+                <div class="flex items-center gap-3">
+                    <img src="https://picsum.photos/id/1005/40/40" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <p class="font-medium text-sm">{{username}}</p>
+                        <p class="text-xs text-gray-500">{{role}}</p>
+                    </div>
+                    <a href="{% url 'logout' %}" class="ml-auto text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-sign-out"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- 主内容区 -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- 顶部导航栏 -->
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-20">
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                </div>
+            </header>
+            
+            <!-- 关于我们内容 -->
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div class="max-w-6xl mx-auto">
+                    <!-- 页面标题 -->
+                    <div class="text-center mb-10">
+                        <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold text-gray-800 mb-4">关于我们</h2>
+                        <p class="text-gray-600 max-w-2xl mx-auto">
+                            以下是团队核心成员介绍，欢迎通过GitHub与我们交流合作。
+                        </p>
+                    </div>
+                    
+                    <!-- 团队成员展示 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                        <!-- 成员1 -->
+                        <div class="team-card">
+                            <img 
+                                src="{% static 'images/1.jpg' %}"
+                                alt="陈郑雨-前端开发" 
+                                class="w-32 h-32 rounded-full object-cover border-4 border-primary/20 mb-4"
+                            >
+                            <h3 class="text-xl font-bold text-gray-800 mb-1">陈郑雨</h3>
+                            <p class="text-primary font-medium mb-3">前端后端开发</p>
+                            <p class="text-gray-600 text-sm mb-6">
+                                负责系统前端UI实现与前后端交互逻辑，注重用户体验细节。
+                            </p>
+                            <a href="https://github.com/Vermouth-hub" target="_blank" class="btn btn-primary flex items-center gap-2">
+                                <i class="fa fa-github"></i>
+                                <span>GitHub</span>
+                            </a>
+                        </div>
+                        
+                        <!-- 成员2 -->
+                        <div class="team-card">
+                            <img 
+                                src="{% static 'images/3.jpg' %}"
+                                alt="张海川-文书" 
+                                class="w-32 h-32 rounded-full object-cover border-4 border-primary/20 mb-4"
+                            >
+                            <h3 class="text-xl font-bold text-gray-800 mb-1">张海川</h3>
+                            <p class="text-secondary font-medium mb-3">文书、功能校验</p>
+                            <p class="text-gray-600 text-sm mb-6">
+                                负责撰写改系统的设计说明书，同时对系统功能进行校验与检测
+                            </p>
+                            <a href="https://github.com/candred" target="_blank" class="btn btn-primary flex items-center gap-2">
+                                <i class="fa fa-github"></i>
+                                <span>GitHub</span>
+                            </a>
+                        </div>
+                        
+                        <!-- 成员3 -->
+                        <div class="team-card">
+                            <img 
+                                src="{% static 'images/2.jpg' %}"
+                                alt="陈凯豪-数据库设计" 
+                                class="w-32 h-32 rounded-full object-cover border-4 border-primary/20 mb-4"
+                            >
+                            <h3 class="text-xl font-bold text-gray-800 mb-1">陈凯豪</h3>
+                            <p class="text-accent font-medium mb-3">数据库设计</p>
+                            <p class="text-gray-600 text-sm mb-6">
+                                数据库字段设计，对数据库可用性进行校验，演示文稿美化
+                            </p>
+                            <a href="https://github.com/chekunhang" target="_blank" class="btn btn-primary flex items-center gap-2">
+                                <i class="fa fa-github"></i>
+                                <span>GitHub</span>
+                            </a>
+                        </div>
+                        
+                        <!-- 成员4 -->
+                        <div class="team-card">
+                            <img 
+                                src="{% static 'images/4.jpg' %}"
+                                alt="杨志豪-数据库设计" 
+                                class="w-32 h-32 rounded-full object-cover border-4 border-primary/20 mb-4"
+                            >
+                            <h3 class="text-xl font-bold text-gray-800 mb-1">杨志豪</h3>
+                            <p class="text-warning font-medium mb-3">数据库设计</p>
+                            <p class="text-gray-600 text-sm mb-6">
+                                数据库字段设计，对数据库可用性进行校验，文书美化
+                            </p>
+                            <a href="https://github.com/yzhihao788-beep" target="_blank" class="btn btn-primary flex items-center gap-2">
+                                <i class="fa fa-github"></i>
+                                <span>GitHub</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- 团队信息 -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-code-fork text-primary mr-2"></i>
+                                    开发理念
+                                </h3>
+                                <ul class="space-y-3 text-gray-600">
+                                    <li class="flex items-start">
+                                        <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                                        <span>以用户体验为核心，打造简洁高效的操作流程</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                                        <span>采用模块化设计，确保系统可扩展性与可维护性</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                                        <span>持续迭代优化，快速响应用户反馈与需求变化</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-link text-primary mr-2"></i>
+                                    联系我们
+                                </h3>
+                                <ul class="space-y-3 text-gray-600">
+                                    <li class="flex items-center">
+                                        <i class="fa fa-github text-gray-500 w-5 mr-2"></i>
+                                        <a href="https://github.com/Vermouth-hub" target="_blank" class="hover:text-primary">团队GitHub组织</a>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fa fa-envelope text-gray-500 w-5 mr-2"></i>
+                                        <a href="mailto:contact@crm-team.com" class="hover:text-primary">contact zychen@stu.ahu.edu.cn</a>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fa fa-globe text-gray-500 w-5 mr-2"></i>
+                                        <a href="https://vermouth-hub.github.io/" target="_blank" class="hover:text-primary">https://vermouth-hub.github.io/</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 交互脚本 -->
+    <script>
+        // 侧边栏折叠功能
+        document.getElementById('sidebar-toggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        // 处理GitHub链接点击（可选：添加跳转提示）
+        document.querySelectorAll('a[href*="github.com"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // 可添加跳转确认逻辑
+                console.log(`跳转到GitHub: ${this.href}`);
+            });
+        });
+    </script>
+</body>
+</html>

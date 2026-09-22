@@ -86,6 +86,10 @@
                         <i class="fa fa-commenting-o w-5 text-center"></i>
                         <span>新品市场反馈</span>
                     </a>
+                    <a href="{% url 'about_us' %}" class="sidebar-item" data-target="feedback">
+                        <i class="fa fa-info-circle w-5 text-center"></i>
+                        <span>关于我们</span>
+                    </a>
                 </nav>
             </div>
             
@@ -151,6 +155,7 @@
                         <div>
                             <label class="form-label">购买产品</label>
                             <select class="form-input" name="product_name">
+                                <option value="">全部产品</option>
                                 {% for product in products %}
                                     <option value="{{ product.product_id }}">{{ product.product_name }}</option>
                                 {% endfor %}
@@ -167,7 +172,7 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">客户代码</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">代码</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">客户名称</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">所在区域</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">联系人</th>

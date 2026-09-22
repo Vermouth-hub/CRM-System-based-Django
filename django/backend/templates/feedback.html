@@ -63,7 +63,7 @@
             
             <div class="p-4">
                 <nav class="space-y-1">
-                    <a href="{% url 'dashboard' %}" class="sidebar-item active" data-target="dashboard">
+                    <a href="{% url 'dashboard' %}" class="sidebar-item" data-target="dashboard">
                         <i class="fa fa-dashboard w-5 text-center"></i>
                         <span>控制面板</span>
                     </a>
@@ -86,6 +86,10 @@
                     <a href="{% url 'feedback' %}" class="sidebar-item active" data-target="feedback">
                         <i class="fa fa-commenting-o w-5 text-center"></i>
                         <span>新品市场反馈</span>
+                    </a>
+                    <a href="{% url 'about_us' %}" class="sidebar-item" data-target="feedback">
+                        <i class="fa fa-info-circle w-5 text-center"></i>
+                        <span>关于我们</span>
                     </a>
                 </nav>
             </div>

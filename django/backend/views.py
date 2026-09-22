@@ -21,7 +21,6 @@ from calendar import monthrange
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import UploadedFileForm
 import json
-import os
 
 
 def get_month_range(target_date):
@@ -196,17 +195,29 @@ def searchCompany(request):
     region = request.GET.get('region', '').strip()
     product_id = request.GET.get('product_id', '').strip()
     filters = Q()
+    region_mapping = {
+        'beijing': '北京',
+        'shanghai': '上海',
+        'guangzhou': '广州',
+        'shenzhen': '深圳'
+    }
+
     if company_name:
         filters &= Q(company__company_name__icontains=company_name)
     if company_id:
         filters &= Q(company__company_id__icontains=company_id)
     if region:
         if region != 'other':
-            filters &= Q(company__region=region)
+            chinese_region = region_mapping.get(region, region)
+            filters &= Q(company__region=chinese_region)
         else:
-            filters &= ~Q(company__region__in=['beijing', 'shanghai', 'guangzhou', 'shenzhen']) & ~Q(company__region='')
-    if product_id != "P000":
-        filters &= Q(product__product_id__icontains=product_id)
+            major_regions = list(region_mapping.values())
+            filters &= ~Q(company__region__in=major_regions) & ~Q(company__region='')
+
+    # 新增：根据产品ID过滤（关联产品表的product_id）
+    if product_id:
+        filters &= Q(product__product_id=product_id)  # 外键关联查询
+
     matching_orders = Order.objects.filter(filters).select_related('company', 'product')
     order_ids = set()
     customer_list = []
@@ -677,7 +688,7 @@ def feedbackView(request):
     feedback_this_month = NewProductFeedback.objects.filter(feedback_time__date__gte=start_of_month).count()
     active_feedback = NewProductFeedback.objects.filter(feedback_time__date__gte=start_of_month, feedback_type=1).count()
     negative_feedback = NewProductFeedback.objects.filter(feedback_time__date__gte=start_of_month, feedback_type=2).count()
-    feedback = NewProductFeedback.objects.all()
+    feedback = NewProductFeedback.objects.all().order_by("feedback_id")
     paginator = Paginator(feedback, 5)
     page_number = request.GET.get('page', 1)
     try:
@@ -738,3 +749,13 @@ def feedbackView(request):
         'negative_counts': negative_counts
     }
     return render(request, "feedback.html", context)
+
+
+@login_required
+def aboutView(request):
+    username = request.user.username
+    context = {
+        "username": username,
+        "role": "管理员"
+    }
+    return render(request, "about.html", context)
